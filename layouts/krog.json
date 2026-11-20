@@ -176,7 +176,10 @@
                       "id": "claude-artifacts",
                       "type": "block",
                       "content": {
-                        "mod": "claude-artifacts"
+                        "mod": "helm",
+                        "props": {
+                          "part": "artifacts"
+                        }
                       }
                     }
                   ],

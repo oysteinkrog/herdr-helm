@@ -12,6 +12,7 @@ import { Freeze, Thaw } from "./freeze.js";
 import { Asks } from "./asks.js";
 import { Tabbar } from "./tabbar.js";
 import { Agents, SortMenu } from "./agents.js";
+import { Artifacts } from "./artifacts.js";
 
 export const PARTS = {
   brand: Brand,
@@ -28,4 +29,5 @@ export const PARTS = {
   tabbar: Tabbar,
   agents: Agents,
   "sort-menu": SortMenu,
+  artifacts: Artifacts,
 };
