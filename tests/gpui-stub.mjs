@@ -6,4 +6,4 @@ export class View {}
 export const div = () => chain(), svg = () => chain(), image = () => chain(), v_flex = () => chain(), h_flex = () => chain();
 export const Input = { new: () => chain() };
 export const InputState = { new: () => ({ on() {}, value: () => "", set_value() {}, focus() {}, set_selected_range() {} }) };
-export const ScrollHandle = { new: () => ({ scroll_to_item() {} }) };
+export const ScrollHandle = { new: () => ({ asked: [], scroll_to_item(i) { this.asked.push(i); }, release() { return true; } }) };

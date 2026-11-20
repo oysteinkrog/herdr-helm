@@ -28,7 +28,10 @@
               "id": "spaces",
               "type": "block",
               "content": {
-                "mod": "space-folders"
+                "mod": "helm",
+                "props": {
+                  "part": "spaces"
+                }
               },
               "size": {
                 "weight": 1

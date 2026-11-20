@@ -456,7 +456,7 @@ only and write the code fresh (section 5).
 | `brand` | `brand` | workspace-chrome |
 | `spaces` | `spaces` | space-folders |
 | `footer` | `sidebar-footer` | workspace-chrome footer |
-| `tabbar` | `tabs` (engine host, 2.3) | tabs-asks |
+| `tabbar` | `tabs` | tabs-asks |
 | `pane-header` | pane header of `main` | pane |
 | `asks` | `asks-list` | asks |
 | `agents` | `agents` | agents |
@@ -477,13 +477,14 @@ Each concern has one engine: Asks, spaces (folders, git, order), freeze, agents 
 times, later the "doing now" line), artifacts scan, timeline (later). Engines hold no UI. Parts
 read what engines publish and call their functions.
 
-Engines run in one copy only, the host. The host is the `tabbar` part, as today: it is always on
-screen in `krog`, so asks are found before the panel is opened. Overlays and the other parts never
-start timers that do engine work. A module-level guard makes sure a second `tabbar` copy (after a
+Engines run in one copy only, the host. The host is the `status` part: it is always on screen in
+`krog`, so asks are found before the panel is opened, and it is the simplest part, so the host
+works while the tab bar is still the old mod during the build. Overlays and the other parts never
+start timers that do engine work. A module-level guard makes sure a second `status` copy (after a
 hot reload, before the old copy's `close`) does not start a second set of timers.
 
 Why not elect a host among all parts: a copy keeps running while hidden, but key commands reach
-shown copies only (AGENTS.md). The tab bar is the one block that is never hidden in `krog`.
+shown copies only (AGENTS.md). The status bar is never hidden in `krog`.
 Step 0.3 checks this; if it is wrong, a heartbeat-free election among layout parts is the fallback.
 
 What engines publish goes to shared state only when it changed (`lib/store.js` compares before
@@ -535,7 +536,7 @@ Herdr splits `<mod>.<command>` with more dots (step 0.3 checks).
 | `helm.panel-timeline` (later) | toggle the timeline panel | new |
 
 Every command has one owner part. A key reaches every shown `helm` copy, so `main.js` checks a
-table and only the owner acts. Global commands belong to `tabbar`; the artifacts commands to
+table and only the owner acts. Global commands belong to `status`; the artifacts commands to
 `artifacts`.
 
 Shipped mods stay shipped. `helm` opens `menu`, `new-menu`, `worktree`, `picker`, `machine-add`
@@ -566,19 +567,36 @@ All popups and dialogs are drawn by `lib/ui.js`:
 ### 2.6a Scroll position in lists
 
 Oystein reported on 2026-11-20 that the live spaces list jumps back to the top when he freezes a
-space, and on other actions. Every scrolling list in `helm` (spaces, agents, asks, artifacts,
-menus) follows these rules:
+space, and on other actions. The live `space-folders` fix (dotfiles d5bb5c51) found two causes:
 
-- Each scroll container has a stable `.id(...)` that does not depend on data, and its
-  `ScrollHandle` is made once in `init` and kept on `this`.
-- Rows keep stable keys (space id, agent address, ask id). A list is never rebuilt with new
-  keys, and a parent element never changes type or id between renders (for example from a
-  loading row to the list), because that makes a new scroll area.
-- `helm` scrolls only on purpose: after a keyboard space switch (`helm.space-next`,
-  `helm.space-prev`, `helm.space-back`), it brings the active space into view with
-  `scroll_to_item`, and only when that row is off screen.
+- The scroll area had no stable id and no scroll handle, so any change in the set of rows (a
+  freeze or thaw, a new space, the hide-frozen toggle) reset it to the top.
+- A drag into a folder failed near the bottom of a long list: nothing scrolled the list while
+  dragging. Worse, the "take it out of its folder" drop zone appeared when the drag started. It
+  added a row, which reset the scroll mid-drag and moved every drop target.
 
-The causes found in the live `space-folders` fix will be added here when they come in.
+Every scrolling list in `helm` (spaces, agents, asks, artifacts, menus) follows these rules:
+
+1. Each scroll container has one stable `.id(...)` that does not depend on data. Its
+   `ScrollHandle` is made once in `init`, kept on `this` and attached with `track_scroll` on every
+   render. The container is never rebuilt: a parent element never changes type or id between
+   renders (for example from a loading row to the list), and rows keep stable keys (space id,
+   agent address, ask id).
+2. `helm` scrolls by code only when the front space changed by a key or a command, not by a click
+   on its row, and only when that row is off screen. It uses `scroll_to_item`, which moves as
+   little as needed. It never scrolls on reloads, status changes or menus. The spaces part sees
+   this itself: the front space changed since the last render, and the change did not come from
+   a click on its own row.
+3. Drag edge zones (strips that scroll the list while a drag is held there) lie over the list,
+   outside the scrolling content. Inside the content the pointer is in content coordinates, so
+   the visible edge is unknown. The strips are 26 px high and move one row about every 70 ms,
+   starting from the row last under the pointer. Releasing on a strip cancels the drag.
+4. Starting a drag adds or removes no rows. The "take it out of its folder" drop zone is an
+   overlay over the bottom of the list, above the bottom edge strip, not a row in the list.
+5. Wanted, not yet possible: when rows are added or removed above the view, keep the first
+   visible row in place rather than the pixel offset. herdr-app 0.1.16 gives a script
+   `ScrollHandle.scroll_to_item` and nothing else: no way to read the offset or the first
+   visible row. Until it does, the pixel offset is kept, which is still far better than a reset.
 
 ### 2.7 Room for the later items
 
@@ -630,8 +648,8 @@ layout of five `helm` blocks: one shown, one hidden, two children of a stack, an
    active, and every block inside a hidden column get nothing. A copy does not start at all until
    its block is first shown: parts in the panel do not run until the panel is first opened. When
    no `helm` copy is shown, the key shows an error toast ("unknown command"). This confirms that
-   the engines live in the tab bar (2.3), which `krog` always shows. A 0 px block in the work
-   column is a second place a host could live, if the tab bar ever needs to hide.
+   the engines live in an always shown part (2.3). They live in the status bar, which `krog`
+   always shows. A 0 px block in the work column is a second place a host could live.
 
 Also found while building the sandbox: a fake agent's OSC 7501 report reached `hc` with `state`,
 `app` and `kind`, but `hc get` showed no `msg` field. How a Claude Code report carries its

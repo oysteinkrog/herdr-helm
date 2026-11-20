@@ -4,10 +4,12 @@
 import { Brand, Footer } from "./brand.js";
 import { Status } from "./status.js";
 import { PaneHeader } from "./pane-header.js";
+import { Spaces } from "./spaces.js";
 
 export const PARTS = {
   brand: Brand,
   footer: Footer,
   status: Status,
   "pane-header": PaneHeader,
+  spaces: Spaces,
 };
