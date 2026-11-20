@@ -330,8 +330,8 @@ From `keys.json`, section `layout:krog`:
 | `ctrl-alt-h` | `space-folders.hide-frozen` |
 
 Called by name from code: the toast action `tabs-asks.open`. Not bound: `tabs-asks.recheck`,
-`asks.accept`, the six `claude-artifacts.*` commands. The survey's decision to cut the six
-next/previous space bindings to two is not done yet (see step 9.2).
+`asks.accept`, the six `claude-artifacts.*` commands. All six next/previous space bindings stay (Oystein never agreed to cut them; most match
+FrankenTerm's keys on purpose). See 3.2.
 
 ### 1.12 Shipped Herdr mods that `krog` opens by name
 
@@ -692,8 +692,8 @@ New `layout:krog` section, installed from `keys/layout-krog.json`:
 
 | Key | Command |
 |---|---|
-| `alt-down`, `ctrl-shift-down` | `helm.space-next` |
-| `alt-up`, `ctrl-shift-up` | `helm.space-prev` |
+| `alt-down`, `ctrl-shift-down`, `ctrl-shift-e`, `ctrl-shift-pagedown`, `ctrl-space shift-n` | `helm.space-next` |
+| `alt-up`, `ctrl-shift-up`, `ctrl-shift-u`, `ctrl-shift-pageup`, `ctrl-space shift-p` | `helm.space-prev` |
 | `ctrl-alt-a` | `helm.panel-asks` |
 | `ctrl-alt-f` | `helm.panel-files` |
 | `ctrl-alt-c` | `helm.panel-changes` |
@@ -703,9 +703,8 @@ New `layout:krog` section, installed from `keys/layout-krog.json`:
 | `ctrl-alt-b` | `helm.space-back` |
 | `ctrl-alt-h` | `helm.hide-frozen` |
 
-This also does the survey's "cut the six next/previous space bindings to two": the other four
-(`ctrl-shift-pagedown/pageup`, `ctrl-space shift-n/p`, `ctrl-shift-e`, `ctrl-shift-u`) fall back
-to the `global` section. Oystein confirms which two stay at step 9.2.
+Every next and previous space binding `krog` has today stays. Most match FrankenTerm's keys on
+purpose, and the survey's idea of cutting them to two was never agreed.
 
 ### 3.3 Switch-over
 
