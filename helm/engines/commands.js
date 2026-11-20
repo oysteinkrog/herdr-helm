@@ -10,7 +10,7 @@ export class Commands {
   constructor() {
     this.cur = null;
     this.prev = null;
-    this.extra = {}; // name -> handler, added by other engines (asks)
+    this.extra = {}; // name -> handler(cx), added by engines/index.js (the asks commands)
   }
 
   // Remember the space shown before this one, for space-back (like alt-tab between two spaces).
@@ -27,7 +27,7 @@ export class Commands {
     run("space.select", { id });
   }
 
-  run(c) {
+  run(c, cx) {
     this.track();
     const active = spaces().find((s) => s.active)?.id ?? null;
     switch (c) {
@@ -50,7 +50,7 @@ export class Commands {
       case "panel-changes": togglePanel("changes"); return true;
       case "panel-artifacts": togglePanel("claude-artifacts"); return true;
       default:
-        if (this.extra[c]) { this.extra[c](); return true; }
+        if (this.extra[c]) { this.extra[c](cx); return true; }
         return false;
     }
   }

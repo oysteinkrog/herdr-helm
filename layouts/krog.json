@@ -143,7 +143,10 @@
                           "id": "asks-list",
                           "type": "block",
                           "content": {
-                            "mod": "asks"
+                            "mod": "helm",
+                            "props": {
+                              "part": "asks"
+                            }
                           },
                           "size": {
                             "weight": 1

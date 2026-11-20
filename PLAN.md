@@ -651,9 +651,9 @@ layout of five `helm` blocks: one shown, one hidden, two children of a stack, an
    the engines live in an always shown part (2.3). They live in the status bar, which `krog`
    always shows. A 0 px block in the work column is a second place a host could live.
 
-Also found while building the sandbox: a fake agent's OSC 7501 report reached `hc` with `state`,
-`app` and `kind`, but `hc get` showed no `msg` field. How a Claude Code report carries its
-message is checked again in phase 5; until then, sandbox Asks tests use the screen text.
+Also found while building the sandbox: an OSC 7501 report carries `msg` base64 encoded (it may
+hold `:`, the field separator). The fake agent first sent it as plain text, and `hc get` showed
+no `msg`. With base64 the Asks card reads its question and options from the report.
 
 ---
 

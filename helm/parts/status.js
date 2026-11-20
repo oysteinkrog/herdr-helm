@@ -26,11 +26,11 @@ export class Status {
     this.commands = new Commands();
     if (checking()) return;
     this.token = {};
-    if (claimHost(this.token)) this.engines = startEngines(cx);
+    if (claimHost(this.token)) this.engines = startEngines(cx, this.commands);
   }
 
-  command(c) {
-    this.commands.run(c);
+  command(c, cx) {
+    this.commands.run(c, cx);
   }
 
   close() {
