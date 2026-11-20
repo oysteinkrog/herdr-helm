@@ -1,0 +1,65 @@
+herdr-helm
+Copyright (c) 2026 Oystein Krog. MIT license, see LICENSE.
+
+herdr-helm contains code and files taken from the projects below, under their own licenses.
+The full license texts are in THIRD-PARTY-LICENSES/. Each file that holds code taken from one
+of these projects names its source and says what was changed in a comment at its top.
+
+
+1. Herdr app (herdrdev/herdr-app), the mods it ships
+   https://github.com/herdrdev/herdr-app
+   Tag v0.1.16, commit 034f8b85f7e6bb71f8ff55cb4a80c548b2578c0f, folder defaults/mods/
+   Copyright the Herdr authors. Apache License 2.0:
+   THIRD-PARTY-LICENSES/herdr-app-Apache-2.0.txt
+
+   Used for: the parts that replace the shipped mods agents, workspace-status,
+   workspace-chrome, pane and tabs, and parts of spaces and menu. These files were changed
+   for herdr-helm: they were split into helm parts and engines, restyled, and given helm's
+   shared state and commands. Each changed file says so at its top.
+
+   Icons in helm/icons/ copied from the shipped mods workspace-chrome, pane, tabs, files
+   and changes are Lucide icons (see 5).
+
+
+2. herdr-space-folders (jankeesvw/herdr-space-folders)
+   https://github.com/jankeesvw/herdr-space-folders
+   Commit 63a78b20d5ed30d57166a3c7165a6eb558c3ef84
+   Copyright (c) 2026 Jankees van Woezik. MIT License:
+   THIRD-PARTY-LICENSES/herdr-space-folders-MIT.txt
+   It builds on the Herdr app's spaces mod, which is Apache License 2.0 (see 1).
+
+   Used for: the spaces part and the folder engine (folders, rules, machines).
+
+
+3. herdr-agent-ask (sachin-philip/herdr-agent-ask)
+   https://github.com/sachin-philip/herdr-agent-ask
+   Commit 764155fcb3e9fad9ea1b85d373d1ba6c27263c04
+   Copyright (c) 2026 sachin-philip. MIT License:
+   THIRD-PARTY-LICENSES/herdr-agent-ask-MIT.txt
+
+   Used for: the Asks engine (detection, parser, classifier, delivery), the Asks panel, the
+   tab bar's Asks button, the test stubs and the test fixtures. Icons asks.svg, send.svg,
+   terminal.svg and x.svg in helm/icons/.
+
+
+4. herdr-artifacts (jmoyers/herdr-artifacts)
+   https://github.com/jmoyers/herdr-artifacts
+   Commit 7d85899ae8f609e81bbefd81dcdbcd21076c2eb2
+   Copyright (c) 2026 Joshua Moyers. MIT License:
+   THIRD-PARTY-LICENSES/herdr-artifacts-MIT.txt
+
+   Used for: the artifacts part and helm/bin/artifacts.py. Icons artifact.svg, copy.svg,
+   link.svg and refresh.svg in helm/icons/.
+
+
+5. Lucide icons
+   https://lucide.dev, as shipped in the Herdr app's mods (defaults/icons/LICENSE-Lucide.txt
+   at the commit in 1)
+   Copyright (c) 2026 Lucide Icons and Contributors. ISC License, with MIT-licensed
+   Feather-derived icons: THIRD-PARTY-LICENSES/Lucide-ISC.txt
+
+   Used for: the glyph icons in helm/icons/.
+
+
+Not used: AkaraChen/2code has no license. herdr-helm takes no code from it; the idea of one
+mod with parts chosen by a prop is written fresh here.
