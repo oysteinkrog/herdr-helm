@@ -25,7 +25,7 @@ Contents:
 6. Testing
 7. Work steps
 8. Risks
-9. Open questions
+9. Decisions and open questions
 
 ---
 
@@ -77,8 +77,8 @@ Spaces list:
 - [ ] Narrow sidebar (under 160 px wide): a compact rail with numbers, status glyph or snowflake.
 - [ ] A space's place is its first terminal's live folder (`panes().cwd`), else `space.folder`.
 - [ ] New spaces wait up to 1.5 s for their git answer before they show, so they do not jump.
-- [ ] Worktree nesting under the main checkout exists in code but is off (`NEST_WORKTREES = false`
-      since 2026-11-17). See question 1.
+- Dropped (Oystein, 2026-11-20): worktree nesting under the main checkout. It was off
+  (`NEST_WORKTREES = false`) since 2026-11-17, and `helm` does not carry it.
 
 Folders:
 
@@ -193,7 +193,7 @@ Tab bar:
       plus a dim `+N` or "N elsewhere"), "Artifacts", "Files", "Changes" (the last two only when
       shared `workspace.panels` lists them). Click toggles the right panel to that child.
 - [ ] Window buttons (minimize, maximize or restore, close) where the system draws none.
-- [ ] macOS traffic-light padding (kept for correctness, not used on Linux).
+- Dropped (Oystein, 2026-11-20): the macOS traffic-light padding. `helm` runs on Linux.
 - [ ] The panel choice is remembered per space (localStorage `panels`): switching spaces shows
       that space's panel or hides it.
 
@@ -228,7 +228,8 @@ Asks engine (runs here because this copy is always on screen):
 - [ ] Classifier: `claude -p --model haiku --output-format json --json-schema … --tools ""`
       without the person's settings (about 1 s), retried with settings on an auth error; or
       `codex exec --output-schema` with the newest codex found on the machine. Choice from
-      `asks.json` `classifier` (`auto`, `claude`, `codex`). With neither CLI, one notice card.
+      `asks.json` `classifier` (`auto`, `claude`, `codex`). With neither CLI, today's mod shows one
+      notice card; `helm` drops that card (Oystein, 2026-11-20) and only logs it with `debug`.
 - [ ] Toasts "<agent> is asking" (5 s, warning, action `tabs-asks.open`) unless the person is
       looking at that terminal. `toast: true` in `asks.json` (set 2026-11-20).
 - [ ] Keep at most 60 asks, finished ones for 24 h.
@@ -858,13 +859,13 @@ Steps in a phase run in order; phases 2 to 8 can overlap once phase 1 is done.
 - **9.2** `keys/layout-krog.json`, `layouts/krog.json` with every block on `helm`. Done when:
   every box in section 1 is ticked in the sandbox, and Oystein confirms the key list.
 - **9.3** `herdr-setup` row and `krog-next` on both desktops. Done when: Oystein runs
-  `krog-next` for a few days without going back.
+  `krog-next` on his real window and says the swap can go ahead.
 - **9.4** The swap (3.3 step 3). Done when: `krog` runs `helm`, `krog-legacy` exists, rollback
   tested once.
 
 ### Phase 10: clean up
 
-- **10.1** Remove dead code paths Oystein agreed to drop (question 1).
+- **10.1** Check that no code for the three dropped features (section 9) came across.
 - **10.2** In dotfiles: remove the three add-on rows, three patches and `files/mods/space-freeze/`
   (the `freeze.sh` wrapper from step 4.1 stays until the `herdr-sessions` skill uses the new path).
   Done when: `herdr-setup check` is clean on both desktops and the old mod folders are gone after
@@ -908,11 +909,17 @@ tab rows. Each one starts with its own short plan that uses the slots in 2.7.
 
 ---
 
-## 9. Open questions for Oystein
+## 9. Decisions and open questions
 
-1. Can `helm` drop three things the current mods have but you do not use: worktree nesting under
-   the main checkout (off since 2026-11-17), the "neither Claude nor Codex is installed" notice
-   card, and the macOS traffic-light padding?
-2. For the aiolos number in the status bar: which value is "percent free"? The fetcher has the
-   usable capacity now (`capacity.now_avail`) and the weekly room. This only matters for the
-   later item; it does not block this plan.
+Decided by Oystein on 2026-11-20:
+
+- The plan is approved; build it.
+- Drop three features the current mods have and he does not use: worktree nesting in the spaces
+  list, the "neither Claude nor Codex is installed" notice card, and the macOS window-button
+  (traffic-light) padding.
+
+Still open:
+
+1. For the aiolos number in the status bar: which value is "percent free"? The fetcher has the
+   usable capacity now (`capacity.now_avail`) and the weekly room. This is for the later item
+   only and blocks nothing here.
