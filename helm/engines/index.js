@@ -2,6 +2,7 @@
 import { spaces, focused, notify, run } from "herdr";
 import { SpacesEngine } from "./spaces/engine.js";
 import { AgentsEngine } from "./agents.js";
+import { migrate } from "./migrate.js";
 import { Engine as AsksEngine } from "./asks/detect.js";
 import { Delivery } from "./asks/deliver.js";
 import { readState, loadConfig } from "./asks/state.js";
@@ -19,6 +20,8 @@ export function nextWaiting(asks, here) {
 }
 
 export function startEngines(cx, commands) {
+  // The old mods' saved state, copied once (PLAN.md 3.1).
+  cx.spawn(async (cx) => { if (await migrate().catch(() => false)) cx.notify(); });
   const spacesEngine = new SpacesEngine();
   spacesEngine.start(cx);
   new AgentsEngine().start(cx);
