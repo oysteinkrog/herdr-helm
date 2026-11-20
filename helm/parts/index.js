@@ -5,6 +5,8 @@ import { Brand, Footer } from "./brand.js";
 import { Status } from "./status.js";
 import { PaneHeader } from "./pane-header.js";
 import { Spaces } from "./spaces.js";
+import { FolderMenu } from "./folder-menu.js";
+import { FolderEdit } from "./folder-edit.js";
 
 export const PARTS = {
   brand: Brand,
@@ -12,4 +14,6 @@ export const PARTS = {
   status: Status,
   "pane-header": PaneHeader,
   spaces: Spaces,
+  "folder-menu": FolderMenu,
+  "folder-edit": FolderEdit,
 };
