@@ -48,9 +48,9 @@ export function button(t, id, label, onClick, { primary = false, enabled = true 
 }
 
 // A small square icon button for bars (26 px), on background `base`.
-export function iconButton(t, id, child, onClick, { base = "chrome", tooltip = null } = {}) {
+export function iconButton(t, id, child, onClick, { base = "chrome", tooltip = null, color = null } = {}) {
   return div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6)
-    .text_color(t.dim).hover((s) => s.bg(hoverBg(t, base)).text_color(t.foreground))
+    .text_color(color ?? t.dim).hover((s) => s.bg(hoverBg(t, base)).text_color(t.foreground))
     .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
     .when(Boolean(tooltip), (el) => el.tooltip(tooltip))
     .on_click(onClick).child(child);
