@@ -34,6 +34,8 @@ of these projects names its source and says what was changed in a comment at its
 3. herdr-agent-ask (sachin-philip/herdr-agent-ask)
    https://github.com/sachin-philip/herdr-agent-ask
    Commit 764155fcb3e9fad9ea1b85d373d1ba6c27263c04
+   plus one later change by Oystein Krog in the fork oysteinkrog/herdr-agent-ask,
+   commit 4be19a2 (the classifier runs with no tools)
    Copyright (c) 2026 sachin-philip. MIT License:
    THIRD-PARTY-LICENSES/herdr-agent-ask-MIT.txt
 
