@@ -70,7 +70,10 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "tabs-asks"
+            "mod": "helm",
+            "props": {
+              "part": "tabbar"
+            }
           },
           "size": {
             "px": 42

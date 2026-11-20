@@ -54,3 +54,12 @@ test("accept answers the newest waiting ask in scope with its recommended option
   d.accept("s3", {});
   assert.equal(sent.length, 1);
 });
+
+test("the tab bar counts waiting asks here and elsewhere, and restores a space's panel", async () => {
+  const { askCounts, wantedPanel } = await import("../helm/parts/tabbar.js");
+  const asks = [ask("a", "t1", 1, { space: "s1" }), ask("b", "t2", 1, { space: "s2" }), ask("c", "t3", 1, { space: "s1", notice: true }), ask("d", "t4", 1, { space: "s1", state: "failed" })];
+  assert.deepEqual(askCounts(asks, "s1"), { here: 1, elsewhere: 1 });
+  assert.equal(wantedPanel({ s1: "files" }, "s1", ["files", "asks"]), "files");
+  assert.equal(wantedPanel({ s1: "changes" }, "s1", ["files", "asks"]), null);
+  assert.equal(wantedPanel({}, "s2", ["files"]), null);
+});

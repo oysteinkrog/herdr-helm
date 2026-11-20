@@ -917,7 +917,7 @@ Steps in a phase run in order; phases 2 to 8 can overlap once phase 1 is done.
 ### Phase 6: tab bar
 
 - **6.1** `parts/tabbar.js`. Done when: every box in 1.4 under tab bar passes, panel choice per
-  space works, and the engine host runs from this part.
+  space works. (The engines run in the status part, see 2.3.)
 
 ### Phase 7: agents
 

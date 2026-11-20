@@ -10,6 +10,7 @@ import { FolderEdit } from "./folder-edit.js";
 import { SpaceMenu } from "./space-menu.js";
 import { Freeze, Thaw } from "./freeze.js";
 import { Asks } from "./asks.js";
+import { Tabbar } from "./tabbar.js";
 
 export const PARTS = {
   brand: Brand,
@@ -23,4 +24,5 @@ export const PARTS = {
   freeze: Freeze,
   thaw: Thaw,
   asks: Asks,
+  tabbar: Tabbar,
 };
