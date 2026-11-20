@@ -824,7 +824,9 @@ Scroll test (2.6a), for the spaces list and every other scrolling list: with eno
 scroll, scroll down, then freeze a space, thaw it, rename one, open and close a menu, fold and
 unfold a folder, wait for the timed reloads (15 s and 60 s), and change agent statuses with fake
 agents. The scroll position must not move in any of these. A keyboard space switch to a row that
-is off screen scrolls just far enough to show it.
+is off screen scrolls just far enough to show it. With the list scrolled to the bottom, a space dragged to
+the top edge strip and held there scrolls the list up to the folders and drops into one; a space
+in a folder dragged onto the drop-out zone leaves it, and starting that drag does not move the list.
 
 For each part: `herdr-app check` passes (`tools/check-all.sh`), then a scenario list with a
 screenshot, compared side by side with the old mod in the same sandbox on the `krog` layout.
