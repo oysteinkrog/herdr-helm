@@ -6,6 +6,7 @@
 #   freeze.sh freeze SPACE [NAME]  stop those programs (shells and tabs stay) and save how to resume them
 #   freeze.sh thaw SPACE           start them again in the same terminals, then drop the saved state
 #   freeze.sh list                 JSON: the frozen spaces on this machine
+#   freeze.sh backup SPACE         copy the Claude transcripts of a frozen space that has no copy yet
 #   freeze.sh version              the version of these commands and their output (a number)
 #
 # SPACE is the space id as this machine's core knows it (no "<machine>/" prefix).
@@ -14,7 +15,8 @@
 # the cgroup freeze of freeze-job.sh, where a process stays in memory, stopped.
 #
 # State: ~/.local/state/space-freeze/<SPACE>.json, one file per frozen space. It survives reboots
-# and core restarts; only `thaw` removes it. Nothing here freezes or thaws on its own.
+# and core restarts; only `thaw` removes it. Freeze also keeps a reflink copy of each Claude
+# transcript in transcripts/<session>/, and thaw puts a missing transcript back from it. Nothing here freezes or thaws on its own.
 # freeze refuses while an agent in the space is working or blocked.
 #
 # helm (herdr-helm) carries this script as mods/helm/bin/freeze.sh. Other tools call it by path
@@ -27,6 +29,8 @@ STATE="${XDG_STATE_HOME:-$HOME/.local/state}/space-freeze"
 PERSIST_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/claude-persist/sessions"
 PERSIST_SH="$HOME/.claude/hooks/claude-persist.sh"
 CLAUDE_SESSIONS="$HOME/.claude/sessions"
+PROJECTS="$HOME/.claude/projects"
+BACKUP="$STATE/transcripts"
 # Typed from a terminal, hc tags a send as a message from that terminal; these are typed by the person.
 unset HC_TERMINAL_ID HC_TERMINAL_SOCKET
 HC=$(command -v hc || echo "$HOME/.local/bin/hc")
@@ -102,6 +106,59 @@ describe() {
       claude_pid:(if $cpid == "" then null else ($cpid|tonumber) end)}'
 }
 
+# Where Claude keeps a session's transcript. Fails when there is none.
+transcript_of() {
+  local f
+  for f in "$PROJECTS"/*/"$1".jsonl; do [ -f "$f" ] && { echo "$f"; return 0; }; done
+  return 1
+}
+
+# Freeze keeps a copy of each Claude transcript and its session folder, as a reflink, so it uses
+# no disk until the original changes. Why: on 2026-11-20 a frozen session's transcript was
+# deleted while it was frozen (not by helm), and its thaw ended in "No conversation found".
+backup_transcript() {
+  local sid=$1 t d="$BACKUP/$1"
+  t=$(transcript_of "$sid") || return 0
+  rm -rf "$d.tmp"; mkdir -p "$d.tmp" || return 1
+  cp --reflink=auto -p "$t" "$d.tmp/" || return 1
+  if [ -d "${t%.jsonl}" ]; then cp -a --reflink=auto "${t%.jsonl}" "$d.tmp/" || return 1; fi
+  printf '%s\n' "$t" > "$d.tmp/path"
+  rm -rf "$d"; mv "$d.tmp" "$d"
+}
+
+# Put a missing transcript back from freeze's copy. Fails when it is missing and there is no copy.
+restore_transcript() {
+  local sid=$1 d="$BACKUP/$1" t
+  transcript_of "$sid" >/dev/null && return 0
+  [ -f "$d/$sid.jsonl" ] && [ -f "$d/path" ] || return 1
+  t=$(cat "$d/path"); mkdir -p "$(dirname "$t")" || return 1
+  cp --reflink=auto -p "$d/$sid.jsonl" "$t" || return 1
+  if [ -d "$d/$sid" ] && [ ! -e "${t%.jsonl}" ]; then cp -a --reflink=auto "$d/$sid" "${t%.jsonl}"; fi
+  return 0
+}
+
+# Copies of thawed sessions stay 7 days, in case the resume failed for another reason.
+prune_backups() {
+  local d
+  for d in "$BACKUP"/*/thawed; do
+    [ -e "$d" ] && [ -n "$(find "$d" -mtime +7 2>/dev/null)" ] && rm -rf "${d%/thawed}"
+  done
+  return 0
+}
+
+# Back up the transcripts of a frozen space that has no copy yet (spaces frozen before copies).
+backup_space() {
+  local f="$STATE/$1.json" sid n=0
+  [ -f "$f" ] || die "this space is not frozen"
+  for sid in $(jq -r '.terminals[].session // empty' "$f"); do
+    [ -f "$BACKUP/$sid/$sid.jsonl" ] && continue
+    backup_transcript "$sid" && [ -f "$BACKUP/$sid/$sid.jsonl" ] && n=$((n + 1))
+  done
+  jq -cn --argjson n "$n" --arg m "$(for sid in $(jq -r '.terminals[].session // empty' "$f"); do
+    [ -f "$BACKUP/$sid/$sid.jsonl" ] || transcript_of "$sid" >/dev/null || echo "$sid"; done)" \
+    '{copied:$n, missing:($m | split("\n") | map(select(. != "")))}'
+}
+
 plan() {
   local space=$1 addrs a
   mkdir -p "$STATE"
@@ -143,6 +200,7 @@ stop_one() {
   # claude-persist must not bring a frozen session back after a reboot.
   if [ -n "$sid" ]; then
     for f in "$PERSIST_DIR/$sid"@*.json; do [ -e "$f" ] && rm -f "$f"; done
+    backup_transcript "$sid" || echo "freeze.sh: no copy of the transcript of $sid" >&2
   fi
   return 0
 }
@@ -174,9 +232,15 @@ freeze() {
 # else in a new shell in the same tab.
 # THAW_ADDR is the terminal it used, so a program that stays frozen is saved with its new address.
 thaw_one() {
-  local space=$1 e=$2 name tab cwd resume g target="" kind
-  THAW_ADDR=""
+  local space=$1 e=$2 name tab cwd resume g target="" kind sid
+  THAW_ADDR=""; THAW_ERR=""
   kind=$(jq -r '.kind // "program"' <<<"$e")
+  sid=$(jq -r '.session // empty' <<<"$e")
+  # Resuming a session whose transcript is gone only prints "No conversation found": keep it frozen.
+  if [ "$kind" = claude ] && [ -n "$sid" ] && ! restore_transcript "$sid"; then
+    THAW_ERR="the transcript of Claude session $sid is gone and freeze has no copy"
+    return 1
+  fi
   name=$(jq -r .name <<<"$e"); tab=$(jq -r '.tab // empty' <<<"$e"); cwd=$(jq -r '.cwd // empty' <<<"$e")
   resume=$(jq -r .resume <<<"$e")
   # By name (herdr-app terminals have none), else by address: hc keeps both across a core restart.
@@ -201,18 +265,24 @@ thaw_one() {
   if ! "$HC" send "$target" "$resume" >/dev/null 2>&1; then
     "$HC" label "$target" "herdr.frozen=$kind" >/dev/null 2>&1
     THAW_ADDR=$target
+    THAW_ERR="hc send to $target failed"
     return 1
   fi
+  if [ -n "$sid" ] && [ -d "$BACKUP/$sid" ]; then touch "$BACKUP/$sid/thawed"; fi
 }
 
 thaw() {
-  local space=$1 f="$STATE/$1.json" e left=() n=0
+  local space=$1 f="$STATE/$1.json" e left=() errs=() n=0
   [ -f "$f" ] || die "this space is not frozen"
   while IFS= read -r e; do
     if thaw_one "$space" "$e"; then n=$((n + 1))
-    elif [ -n "$THAW_ADDR" ]; then left+=("$(jq -c --arg a "$THAW_ADDR" '.address = $a' <<<"$e")")
-    else left+=("$e"); fi
+    else
+      if [ -n "$THAW_ADDR" ]; then left+=("$(jq -c --arg a "$THAW_ADDR" '.address = $a' <<<"$e")")
+      else left+=("$e"); fi
+      [ -n "$THAW_ERR" ] && errs+=("$(jq -r '.name // .address' <<<"$e"): $THAW_ERR")
+    fi
   done < <(jq -c '.terminals[]' "$f")
+  prune_backups
   if [ ${#left[@]} -eq 0 ]; then
     # Nothing here is frozen now: no terminal of the space may keep the label.
     local t
@@ -223,7 +293,8 @@ thaw() {
   else
     printf '%s\n' "${left[@]}" | jq -s --slurpfile old "$f" '$old[0] + {terminals:.}' > "$f.tmp" && mv "$f.tmp" "$f"
   fi
-  jq -cn --argjson n "$n" --argjson l "${#left[@]}" '{thawed:$n, left:$l}'
+  printf '%s\n' "${errs[@]}" | jq -cR --argjson n "$n" --argjson l "${#left[@]}" -s \
+    '{thawed:$n, left:$l, errors:(split("\n") | map(select(. != "")))}'
 }
 
 list() {
@@ -239,6 +310,7 @@ case "${1:-}" in
   plan) plan "${2:?space id}" ;;
   freeze) mkdir -p "$STATE"; freeze "${2:?space id}" "${3:-}" ;;
   thaw) thaw "${2:?space id}" ;;
+  backup) backup_space "${2:?space id}" ;;
   list) list ;;
   version) echo "$VERSION" ;;
   *) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
