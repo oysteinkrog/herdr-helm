@@ -11,6 +11,7 @@ import { SpaceMenu } from "./space-menu.js";
 import { Freeze, Thaw } from "./freeze.js";
 import { Asks } from "./asks.js";
 import { Tabbar } from "./tabbar.js";
+import { Agents, SortMenu } from "./agents.js";
 
 export const PARTS = {
   brand: Brand,
@@ -25,4 +26,6 @@ export const PARTS = {
   thaw: Thaw,
   asks: Asks,
   tabbar: Tabbar,
+  agents: Agents,
+  "sort-menu": SortMenu,
 };

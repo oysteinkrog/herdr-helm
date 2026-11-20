@@ -1,6 +1,7 @@
 // The engines the host copy starts (PLAN.md 2.3), and the key commands that need them.
 import { spaces, focused, notify, run } from "herdr";
 import { SpacesEngine } from "./spaces/engine.js";
+import { AgentsEngine } from "./agents.js";
 import { Engine as AsksEngine } from "./asks/detect.js";
 import { Delivery } from "./asks/deliver.js";
 import { readState, loadConfig } from "./asks/state.js";
@@ -20,6 +21,7 @@ export function nextWaiting(asks, here) {
 export function startEngines(cx, commands) {
   const spacesEngine = new SpacesEngine();
   spacesEngine.start(cx);
+  new AgentsEngine().start(cx);
 
   const asks = new AsksEngine();
   const config = (cx) => cx.spawn(async (cx) => { asks.config = await loadConfig(); asks.reset(); cx.notify(); });

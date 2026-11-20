@@ -68,7 +68,8 @@ export function menuKey(key, state, count, pick, close) {
   return true;
 }
 
-// Menu rows. items: [{ label, icon?, iconColor?, sep? }] (sep draws a line above the row).
+// Menu rows. items: [{ label, icon?, iconColor?, sep?, check? }] (sep draws a line above the
+// row, check a tick at its end).
 // state: { at } on the part. The selected row uses t.selected, and the pointer moves it.
 export function menuRows(t, idPrefix, items, state, pick) {
   return items.map((it, i) => v_flex()
@@ -78,7 +79,8 @@ export function menuRows(t, idPrefix, items, state, pick) {
       .on_hover((on, cx) => { if (on && state.at !== i) { state.at = i; cx.notify(); } })
       .on_click(() => pick(i))
       .child(it.icon ? svg(icon(it.icon)).size(14).flex_none().text_color(it.iconColor ?? t.muted) : div().size(14).flex_none())
-      .child(div().flex_1().truncate().child(it.label))));
+      .child(div().flex_1().truncate().child(it.label))
+      .when(Boolean(it.check), (el) => el.child(svg(icon("check")).size(14).flex_none().text_color(t.foreground)))));
 }
 
 // A dialog's frame: title row (with an optional icon), body, and buttons on the right.

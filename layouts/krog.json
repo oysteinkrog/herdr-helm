@@ -160,7 +160,10 @@
                           "id": "agents",
                           "type": "block",
                           "content": {
-                            "mod": "agents"
+                            "mod": "helm",
+                            "props": {
+                              "part": "agents"
+                            }
                           },
                           "min": 120,
                           "size": {
