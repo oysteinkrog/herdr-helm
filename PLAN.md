@@ -563,6 +563,23 @@ All popups and dialogs are drawn by `lib/ui.js`:
   secondary `t.raised` with `t.input` border, Escape closes, every step finishes before
   `closeOverlay`.
 
+### 2.6a Scroll position in lists
+
+Oystein reported on 2026-11-20 that the live spaces list jumps back to the top when he freezes a
+space, and on other actions. Every scrolling list in `helm` (spaces, agents, asks, artifacts,
+menus) follows these rules:
+
+- Each scroll container has a stable `.id(...)` that does not depend on data, and its
+  `ScrollHandle` is made once in `init` and kept on `this`.
+- Rows keep stable keys (space id, agent address, ask id). A list is never rebuilt with new
+  keys, and a parent element never changes type or id between renders (for example from a
+  loading row to the list), because that makes a new scroll area.
+- `helm` scrolls only on purpose: after a keyboard space switch (`helm.space-next`,
+  `helm.space-prev`, `helm.space-back`), it brings the active space into view with
+  `scroll_to_item`, and only when that row is off screen.
+
+The causes found in the live `space-folders` fix will be added here when they come in.
+
 ### 2.7 Room for the later items
 
 - Doing-now line: the agents engine already tracks when each agent's state changed. It also keeps
@@ -784,6 +801,12 @@ Load the `headless-app-ui` skill first. The scripts in `/var/tmp/claude/fz-app` 
   question report, idle, error), so Asks cards and agent rows can be made on demand. Its exact
   sequence comes from `hc --skill` in step 0.2.
 - Only stop processes this sandbox started.
+
+Scroll test (2.6a), for the spaces list and every other scrolling list: with enough rows to
+scroll, scroll down, then freeze a space, thaw it, rename one, open and close a menu, fold and
+unfold a folder, wait for the timed reloads (15 s and 60 s), and change agent statuses with fake
+agents. The scroll position must not move in any of these. A keyboard space switch to a row that
+is off screen scrolls just far enough to show it.
 
 For each part: `herdr-app check` passes (`tools/check-all.sh`), then a scenario list with a
 screenshot, compared side by side with the old mod in the same sandbox on the `krog` layout.
