@@ -7,6 +7,8 @@ import { PaneHeader } from "./pane-header.js";
 import { Spaces } from "./spaces.js";
 import { FolderMenu } from "./folder-menu.js";
 import { FolderEdit } from "./folder-edit.js";
+import { SpaceMenu } from "./space-menu.js";
+import { Freeze, Thaw } from "./freeze.js";
 
 export const PARTS = {
   brand: Brand,
@@ -16,4 +18,7 @@ export const PARTS = {
   spaces: Spaces,
   "folder-menu": FolderMenu,
   "folder-edit": FolderEdit,
+  "space-menu": SpaceMenu,
+  freeze: Freeze,
+  thaw: Thaw,
 };
