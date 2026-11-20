@@ -586,6 +586,40 @@ machine (the aiolos snapshot path, the decisions log path) go in
 this repo. `tools/check-public.sh` runs before each commit and refuses known patterns; its list
 of names lives outside the repo.
 
+### 2.9 Facts checked in step 0.3
+
+Checked on 2026-11-20 with herdr-app 0.1.16 and hc 0.1.21, in the sandbox (a private Xvfb
+display, a private `hc` core and a copy of the app home), with a spike `helm` mod and a test
+layout of five `helm` blocks: one shown, one hidden, two children of a stack, and one 0 px high.
+
+1. **Command names.** `nextCommand()` gets everything after the first dot: the key action
+   `helm.space-next` arrives as `space-next`, and `helm.space.next` arrives as `space.next`.
+   Dots are safe. `helm` still uses dashes (2.5), so a command name never looks like a path.
+2. **localStorage is per copy.** Each copy of a mod gets its own file,
+   `data/<mod>/store-<hash>.json`, holding a flat JSON object of string values. Part `a` wrote a
+   key and parts `c` and `e` of the same mod read nothing. The old mods each ran as one copy and
+   keep theirs in `data/<mod>/store.json` in the same format, which is what migration reads (3.1).
+   This confirms the rule in 2.4: durable state goes in shared state or files, not localStorage.
+3. **`herdr-app check` has no props.** During a check `props()` returns `null` and `checking()`
+   is true. There is no option to pass props. So `main.js` renders every part, one under the
+   other, when `checking()` is true and there is no part. One check then covers all parts.
+   The check writes `gpui-kit.d.ts` and `jsconfig.json` into the mod folder; they are ignored by git.
+4. **Hover in popups.** In a `helm` popup, `on_hover` fired for each row the pointer entered and
+   left, and the `.hover()` style followed the pointer. Herdr issue #753 did not show here. This
+   was pointer movement from `xdotool` on Xvfb, not a real mouse, so 2.6 stays as written: the
+   keyboard index and `t.selected` show the target, and hover only moves the index.
+5. **Which copies get key commands.** Every shown copy gets every `helm.*` command, so the owner
+   table in 2.5 is needed. A 0 px block counts as shown. A hidden block, a stack child that is not
+   active, and every block inside a hidden column get nothing. A copy does not start at all until
+   its block is first shown: parts in the panel do not run until the panel is first opened. When
+   no `helm` copy is shown, the key shows an error toast ("unknown command"). This confirms that
+   the engines live in the tab bar (2.3), which `krog` always shows. A 0 px block in the work
+   column is a second place a host could live, if the tab bar ever needs to hide.
+
+Also found while building the sandbox: a fake agent's OSC 7501 report reached `hc` with `state`,
+`app` and `kind`, but `hc get` showed no `msg` field. How a Claude Code report carries its
+message is checked again in phase 5; until then, sandbox Asks tests use the screen text.
+
 ---
 
 ## 3. Migration, switch-over and rollback
