@@ -812,7 +812,11 @@ Load the `headless-app-ui` skill first. The scripts in `/var/tmp/claude/fz-app` 
   `HC_TERMINAL_SOCKET` and `HC_TERMINAL_ID` unset.
 - `HERDR_APP_HOME` is a reflinked copy of the real app home, made once.
 - A fake second machine from a second private core (as `fz-sbx` does), for remote spaces,
-  remote folders and remote `freeze.sh`.
+  remote folders and remote `freeze.sh`: `tools/sbx/add-remote.sh NAME` adds it with
+  `hc machine add --via tools/sbx/remote.sh`, which runs the line in a private HOME, runtime and
+  state folder and starts in that home. `--down NAME` makes its transport fail, to test a
+  machine that is unreachable. Checked: spaces grouped by machine, a remote card in Asks,
+  Freeze and Thaw on the remote with `freeze.sh list` there, and an unreachable machine.
 - `ui.sh` (xdotool clicks and keys into that window only) and `herdr-app shot` for screenshots.
   Both refuse to run if `DISPLAY` is `:0` or `HERDR_APP_HOME` is not a sandbox path.
 - Fake agents: a small script that reports agent status (OSC 7501: working, blocked with a
