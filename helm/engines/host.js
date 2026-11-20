@@ -2,23 +2,24 @@
 //
 // A key bound to "helm.<command>" reaches every shown copy of helm (PLAN.md 2.9), so each
 // command has exactly one owner part, and only that part acts on it. Engines (timers, polling,
-// state that other parts read) run in one copy only: the host. The host is the tab bar, which
-// the krog layout always shows. A second tab bar copy, for example for a moment during a hot
+// state that other parts read) run in one copy only: the host. The host is the status bar,
+// which the krog layout always shows and which is the simplest part, so it is the same copy that
+// owns the window-wide key commands. A second status copy, for example for a moment during a hot
 // reload, finds the host taken and starts nothing.
 
 export const COMMANDS = {
-  "space-next": "tabbar",
-  "space-prev": "tabbar",
-  "space-back": "tabbar",
-  "hide-frozen": "tabbar",
-  "panel-asks": "tabbar",
-  "asks-open": "tabbar",
-  "panel-files": "tabbar",
-  "panel-changes": "tabbar",
-  "panel-artifacts": "tabbar",
-  "next-waiting": "tabbar",
-  "asks-recheck": "tabbar",
-  "asks-accept": "tabbar",
+  "space-next": "status",
+  "space-prev": "status",
+  "space-back": "status",
+  "hide-frozen": "status",
+  "panel-asks": "status",
+  "asks-open": "status",
+  "panel-files": "status",
+  "panel-changes": "status",
+  "panel-artifacts": "status",
+  "next-waiting": "status",
+  "asks-recheck": "status",
+  "asks-accept": "status",
   "artifacts-refresh": "artifacts",
   "artifacts-scope": "artifacts",
   "artifacts-seen": "artifacts",
@@ -29,7 +30,7 @@ export const COMMANDS = {
 
 export const ownerOf = (command) => COMMANDS[command] ?? null;
 
-export const HOST_PART = "tabbar";
+export const HOST_PART = "status";
 
 // The copy that runs the engines, for this build of the module. A hot reload loads a new build
 // with this set back to null, and the old build's timers stop on their own.

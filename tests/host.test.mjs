@@ -9,7 +9,7 @@ test("every command has one owner and a dash name", () => {
     assert.match(c, /^[a-z]+(-[a-z]+)*$/);
     assert.equal(typeof owner, "string");
   }
-  assert.equal(ownerOf("space-next"), "tabbar");
+  assert.equal(ownerOf("space-next"), "status");
   assert.equal(ownerOf("nope"), null);
 });
 

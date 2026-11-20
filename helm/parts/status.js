@@ -1,11 +1,15 @@
 // The status bar: the shown space's machine and branch, how many agents and how many need you,
 // a slot on the right for later numbers (PLAN.md 2.7), and the palette key as really bound.
+// This part is also the host (it runs the engines) and owns the window-wide key commands.
 // From the Herdr app's shipped workspace-status mod v0.1.16 (Apache-2.0, see NOTICE).
 // Changed for helm: a helm part with helm's icons and a right-side slot.
 import { div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, agents, theme, run, window, keys } from "herdr";
+import { spaces, agents, theme, run, window, keys, checking } from "herdr";
 import { icon } from "../lib/ui.js";
+import { claimHost, releaseHost } from "../engines/host.js";
+import { startEngines } from "../engines/index.js";
+import { Commands } from "../engines/commands.js";
 
 // The palette key from keys.json, written for this platform ("Ctrl+Shift+P").
 export function paletteHint(list, platform) {
@@ -18,7 +22,23 @@ export function paletteHint(list, platform) {
 }
 
 export class Status {
+  init(_p, cx) {
+    this.commands = new Commands();
+    if (checking()) return;
+    this.token = {};
+    if (claimHost(this.token)) this.engines = startEngines(cx);
+  }
+
+  command(c) {
+    this.commands.run(c);
+  }
+
+  close() {
+    if (this.token) releaseHost(this.token);
+  }
+
   render() {
+    this.commands.track();
     const t = theme();
     const space = spaces().find((s) => s.active);
     const list = agents();

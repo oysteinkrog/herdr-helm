@@ -15,6 +15,7 @@ export const KEYS = {
   prefs: "helm.prefs",
   migrated: "helm.migrated",
   timeline: "helm.timeline",
+  machines: "helm.machines",
 };
 
 // Keys owned by Herdr or by other layouts' mods. helm reads them, and writes space.colors and
