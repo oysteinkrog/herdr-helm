@@ -1,46 +1,49 @@
-// Spike for PLAN.md step 0.3. Each part logs what it sees to <app home>/helm-spike.log.
-import { View, div } from "gpui-kit";
+// helm: one Herdr mod whose layout blocks and overlays each pick a part with props.part
+// (PLAN.md 2.2). This file picks the part, hands it the key commands it owns, and, during
+// `herdr-app check` (which passes no props), draws every part so one check covers all of them.
+import { View } from "gpui-kit";
 import { v_flex } from "gpui-base";
-import { props, nextCommand, exec, appHome, theme, checking, openOverlay, closeOverlay } from "herdr";
+import { props, nextCommand, checking } from "herdr";
+import { PARTS } from "./parts/index.js";
+import { Missing } from "./parts/missing.js";
+import { ownerOf } from "./engines/host.js";
 
-const log = (line) => { if (!checking()) exec("sh", ["-c", 'printf "%s %s\\n" "$(date +%T.%N | cut -c1-12)" "$1" >> "$2"', "spike", line, `${appHome()}/helm-spike.log`]).catch(() => {}); };
+export function makePart(name) {
+  const Part = PARTS[name];
+  return Part ? new Part() : new Missing(name);
+}
 
 export default class Helm extends View {
   init(_props, cx) {
     const p = props() ?? {};
-    this.part = p.part ?? (checking() ? "check-all" : "none");
-    this.at = 0;
-    log(`init part=${this.part} props=${JSON.stringify(p)}`);
-    if (checking()) return;
-    if (this.part === "menu") return;
-    // (b) localStorage: part a writes, every part reads.
-    try {
-      if (this.part === "a") localStorage.setItem("spike", `written-by-a ${Date.now()}`);
-      log(`ls part=${this.part} spike=${localStorage.getItem("spike")}`);
-    } catch (e) { log(`ls part=${this.part} error=${e}`); }
+    if (!p.part && checking()) {
+      this.all = Object.entries(PARTS).map(([name, Part]) => {
+        const part = new Part();
+        part.init?.({ ...(Part.sample ?? {}), part: name }, cx);
+        return part;
+      });
+      return;
+    }
+    this.name = p.part ?? null;
+    this.part = makePart(this.name);
+    this.part.init?.(p, cx);
+    if (checking() || !this.part.command) return;
     cx.spawn(async (cx) => {
       for (;;) {
-        const c = await nextCommand();
-        log(`cmd part=${this.part} got=${JSON.stringify(c)}`);
-        if (c === "lsread") log(`ls-again part=${this.part} spike=${localStorage.getItem("spike")}`);
-        if (c === "popup" && this.part === "a") openOverlay({ mod: "helm", kind: "popup", width: 220, height: 200, props: { part: "menu" } });
+        const c = String(await nextCommand());
+        // "focus" comes from Herdr itself (focusable mods); everything else is helm's own.
+        if (c === "focus" || ownerOf(c) === this.name) await this.part.command(c, cx);
         cx.notify();
       }
     });
   }
 
-  render() {
-    const t = theme();
-    if (this.part === "menu") {
-      return v_flex().id("spike-menu").w_full().p(5).bg(t.popover).text_color(t.foreground).children(["one", "two", "three", "four"].map((label, i) =>
-        div().id(`row-${i}`).h(30).px(8).flex().items_center().rounded(6)
-          .when(i === this.at, (el) => el.bg(t.selected))
-          .hover((s) => s.bg(t.accent))
-          .on_hover((on, cx) => { log(`hover row=${i} on=${on}`); if (on) { this.at = i; cx.notify(); } })
-          .on_click(() => { log(`click row=${i}`); closeOverlay(props().overlay); })
-          .child(label)));
-    }
-    if (this.part === "check-all") return v_flex().child("a").child("b");
-    return div().size_full().p(6).bg(t.chrome).text_color(t.muted).child(`helm spike part ${this.part}`);
+  render(cx) {
+    if (this.all) return v_flex().w_full().children(this.all.map((part) => part.render(cx)));
+    return this.part.render(cx);
+  }
+
+  async close(cx) {
+    await this.part?.close?.(cx);
   }
 }
