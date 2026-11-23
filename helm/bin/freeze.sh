@@ -262,7 +262,12 @@ thaw_one() {
   fi
   # The label goes before this returns, so every window shows the space thawed at once.
   "$HC" label "$target" "herdr.frozen=" >/dev/null 2>&1
-  if ! "$HC" send "$target" "$resume" >/dev/null 2>&1; then
+  # The pane's shell may be fish, and a resume command is bash syntax (claude-persist quotes a
+  # /goal as $'...', which fish rejects). So the command goes in a bash script, and the shell
+  # only gets "bash <path>", which reads the same in every shell.
+  local run="$STATE/run/$(jq -r '.session // .address' <<<"$e").sh"
+  mkdir -p "$STATE/run" && printf '#!/bin/bash\n%s\n' "$resume" > "$run" || { THAW_ERR="cannot write $run"; return 1; }
+  if ! "$HC" send "$target" "bash $(printf %q "$run")" >/dev/null 2>&1; then
     "$HC" label "$target" "herdr.frozen=$kind" >/dev/null 2>&1
     THAW_ADDR=$target
     THAW_ERR="hc send to $target failed"

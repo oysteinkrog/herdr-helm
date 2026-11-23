@@ -43,7 +43,9 @@ test("backup copies the transcript, thaw restores it after it was deleted", () =
   assert.deepEqual(r, { thawed: 1, left: 0, errors: [] });
   assert.equal(readFileSync(join(proj, `${SID}.jsonl`), "utf8"), '{"x":1}\n');
   assert.ok(existsSync(join(proj, SID, "custom-title.json")));
-  assert.match(readFileSync(join(home, "sent"), "utf8"), new RegExp(SID));
+  const sent = readFileSync(join(home, "sent"), "utf8").trim();
+  assert.equal(sent, `bash ${join(state, "run", SID)}.sh`);
+  assert.match(readFileSync(join(state, "run", `${SID}.sh`), "utf8"), new RegExp(`claude --resume ${SID}`));
   assert.ok(existsSync(join(state, "transcripts", SID, "thawed")));
   rmSync(home, { recursive: true });
 });
@@ -56,5 +58,19 @@ test("thaw keeps the space frozen and says why when the transcript and its copy 
   assert.match(r.errors[0], /moss: the transcript of Claude session .* is gone/);
   assert.ok(existsSync(join(state, "sp1.json")));
   assert.equal(existsSync(join(home, "sent")), false);
+  rmSync(home, { recursive: true });
+});
+
+test("thaw types only 'bash <script>', so a bash-quoted /goal works in fish", () => {
+  const { home, state, run } = setup();
+  const f = join(state, "sp1.json"); const j = JSON.parse(readFileSync(f, "utf8"));
+  j.terminals[0].resume = `claude --resume ${SID} $'goal: don\\x27t stop'`;
+  writeFileSync(f, JSON.stringify(j));
+  assert.deepEqual(run("thaw", "sp1"), { thawed: 1, left: 0, errors: [] });
+  const sent = readFileSync(join(home, "sent"), "utf8").trim();
+  assert.doesNotMatch(sent, /\$'/);
+  const script = join(state, "run", `${SID}.sh`);
+  execFileSync("bash", ["-n", script]);
+  assert.match(readFileSync(script, "utf8"), /\$'goal: don\\x27t stop'/);
   rmSync(home, { recursive: true });
 });
