@@ -4,10 +4,10 @@
 //
 // Intervals, as in the old space-folders mod: machines and folder files every 15 s, frozen
 // state every 60 s and when this machine's state folder changes, new-space rules every 250 ms.
-import { hc, spaces, panes, run, watchFolder, home, shared } from "herdr";
+import { hc, spaces, panes, terminals, run, watchFolder, home, shared } from "herdr";
 import { KEYS, FOREIGN, read, write } from "../../lib/store.js";
 import { folders, readFile, merge, save, folderOf, key } from "./folders.js";
-import { NewSpaces } from "./order.js";
+import { NewSpaces, spaceLabels } from "./order.js";
 import { liveList, assignColors } from "./live.js";
 import { loadAll } from "../freeze.js";
 import { localId } from "../../lib/names.js";
@@ -57,7 +57,7 @@ export class SpacesEngine {
     write(FOREIGN.spaceColors, assignColors(sp, shared(FOREIGN.spaceColors)));
     const { seen } = liveList();
     const ps = panes();
-    const actions = this.news.tick(sp, seen, Date.now(), read(KEYS.foldersNew, null), (s) => folderOf(s, folders(s.machine ?? null), ps));
+    const actions = this.news.tick(sp, seen, Date.now(), read(KEYS.foldersNew, null), (s) => folderOf(s, folders(s.machine ?? null), ps), spaceLabels(terminals));
     for (const a of actions) {
       if (a.type === "select") run("space.select", { id: a.id });
       else if (a.type === "move") run("space.move", { id: a.id, index: a.index });

@@ -116,10 +116,13 @@ export class NewSpaces {
     this.known = new Set(ids);
     this.front = null;   // { id, machine, folder, near } of the space in front at the last tick
     this.coming = {};    // new space id -> { at, from: front then }
+    this.labelled = {};  // new space id on this computer -> until when its labels are looked for
   }
 
-  // sp: spaces(); seen: build().seen; want: shared helm.folders.new; folderAt(space): its folder now.
-  tick(sp, seen, now, want, folderAt) {
+  // sp: spaces(); seen: build().seen; want: shared helm.folders.new; folderAt(space): its folder now;
+  // labelsOf(space id): the labels of a terminal in that space that has herdr.space-folder or
+  // herdr.space-after, else null (see byLabels).
+  tick(sp, seen, now, want, folderAt, labelsOf = () => null) {
     const actions = [];
     // The front space closed: show the space above it in the list.
     const was = this.front;
@@ -145,8 +148,10 @@ export class NewSpaces {
     for (const s of fresh) {
       this.known.add(s.id);
       if (fresh.length === 1 && s.id !== made && this.front) this.coming[s.id] = { at: now, from: this.front };
+      if (!s.machine && s.id !== made) this.labelled[s.id] = now + 60000;
     }
     for (const [id, c] of Object.entries(this.coming)) if (now - c.at > 3000) delete this.coming[id];
+    this.byLabels(sp, now, labelsOf, actions);
     const front = sp.find((s) => s.active), c = front && this.coming[front.id];
     if (c) {
       delete this.coming[front.id];
@@ -163,4 +168,44 @@ export class NewSpaces {
     }
     return actions;
   }
+
+  // A space an agent made with herdr-space-new (dotfiles bin/): the helper labels its terminals
+  // herdr.space-folder=<folder id, or "none"> and herdr.space-after=<the space it was made from>.
+  // Such a space goes in that folder, unless it already has a place in `of`, and right after that
+  // space in Herdr's order. Once per space, within 60 s of it appearing, and only for spaces on
+  // this computer (each computer files its own), so a later drag always wins and a reload or a
+  // machine coming in never pulls a space back.
+  byLabels(sp, now, labelsOf, actions) {
+    for (const [id, until] of Object.entries(this.labelled)) {
+      const s = sp.find((w) => w.id === id);
+      if (!s || now > until) { delete this.labelled[id]; continue; }
+      const l = labelsOf(id);
+      if (!l) continue;
+      delete this.labelled[id];
+      delete this.coming[id];
+      const folder = l["herdr.space-folder"];
+      if (folder && folder !== "none") actions.push({ type: "put-if-unset", machine: null, space: s, folder });
+      const after = l["herdr.space-after"];
+      const i = after && after !== id ? sp.findIndex((w) => w.id === after) : -1, j = sp.findIndex((w) => w.id === id);
+      if (i >= 0 && j >= 0 && j !== i + 1) actions.push({ type: "move", id, index: j > i ? i + 2 : i + 1 });
+    }
+  }
+}
+
+// labelsOf for NewSpaces.tick: the labels of a live terminal on this computer in each space that
+// carries herdr.space-folder or herdr.space-after. getTerms (terminals) is read only when a new
+// space is waiting, at most once a tick.
+export function spaceLabels(getTerms) {
+  let by = null;
+  return (id) => {
+    if (!by) {
+      by = {};
+      for (const t of getTerms()) {
+        const l = t.labels, sp = l?.["herdr.space"];
+        if (t.state !== "live" || !sp || String(t.address).includes("/")) continue;
+        if (l["herdr.space-folder"] || l["herdr.space-after"]) by[sp] ??= l;
+      }
+    }
+    return by[id] ?? null;
+  };
 }

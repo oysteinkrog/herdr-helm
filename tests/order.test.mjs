@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { build, step, near, NewSpaces } from "../helm/engines/spaces/order.js";
+import { build, step, near, NewSpaces, spaceLabels } from "../helm/engines/spaces/order.js";
 
 const S = (id, folder, extra = {}) => ({ id, name: id, folder, machine: null, tabs: [], status: "idle", active: false, ...extra });
 const base = (over = {}) => ({
@@ -78,6 +78,48 @@ test("a space made from the front space goes right under it and into its folder"
     { type: "put-if-unset", machine: null, space: S("n", "/t", { active: true }), folder: "w" },
     { type: "move", id: "n", index: 2 },
   ]);
+});
+
+test("an agent's space goes in the folder and after the space its labels name, once", () => {
+  const ns = new NewSpaces(["a", "b", "c"]);
+  const sp = [S("a", "/t", { active: true }), S("b", "/t"), S("c", "/t"), S("n", "/t")];
+  let labels = null;
+  // Labels arrive a tick after the space: it waits for them.
+  assert.deepEqual(ns.tick(sp, [], 0, null, () => null, () => labels), []);
+  labels = { "herdr.space-folder": "w", "herdr.space-after": "b" };
+  assert.deepEqual(ns.tick(sp, [], 250, null, () => null, () => labels), [
+    { type: "put-if-unset", machine: null, space: sp[3], folder: "w" },
+    { type: "move", id: "n", index: 3 },
+  ]);
+  // Done once: a later drag is never undone.
+  assert.deepEqual(ns.tick([sp[0], sp[3], sp[1], sp[2]], [], 500, null, () => null, () => labels), []);
+});
+
+test("space-folder none files nowhere; space-after of a closed space moves nothing", () => {
+  const ns = new NewSpaces(["a"]);
+  const acts = ns.tick([S("a", "/t", { active: true }), S("n", "/t")], [], 0, null, () => null,
+    () => ({ "herdr.space-folder": "none", "herdr.space-after": "gone" }));
+  assert.deepEqual(acts, []);
+});
+
+test("labels are not read for another machine's spaces, nor after 60 s", () => {
+  const ns = new NewSpaces(["a"]);
+  const l = () => ({ "herdr.space-folder": "w" });
+  assert.deepEqual(ns.tick([S("a", "/t"), S("box/n", "/t", { machine: "box" })], [], 0, null, () => null, l), []);
+  ns.tick([S("a", "/t"), S("m", "/t")], [], 0, null, () => null, () => null);
+  assert.deepEqual(ns.tick([S("a", "/t"), S("m", "/t")], [], 61000, null, () => null, l), []);
+});
+
+test("spaceLabels: a live local terminal's labels, by its space", () => {
+  const get = spaceLabels(() => [
+    { address: "t1", state: "live", labels: { "herdr.space": "sp1" } },
+    { address: "t2", state: "live", labels: { "herdr.space": "sp1", "herdr.space-folder": "w" } },
+    { address: "home/t3", state: "live", labels: { "herdr.space": "sp2", "herdr.space-folder": "w" } },
+    { address: "t4", state: "exited", labels: { "herdr.space": "sp3", "herdr.space-after": "sp1" } },
+  ]);
+  assert.equal(get("sp1")["herdr.space-folder"], "w");
+  assert.equal(get("sp2"), null);
+  assert.equal(get("sp3"), null);
 });
 
 test("when the front space closes, the one above it is shown", () => {
