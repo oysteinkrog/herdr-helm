@@ -25,6 +25,8 @@ export async function killSh(machine, name, ...args) {
 
 export const kill = (machine, space) => killSh(machine, "space-kill", "kill", space);
 export const revive = (machine, space) => killSh(machine, "space-revive", space);
+// Takes a record off the killed list without reviving it (the engine keeps it under revived/).
+export const forgetRecord = (machine, space) => killSh(machine, "space-kill", "forget", space);
 
 // One machine's `space-killed` folded into the list, replacing that machine's records. Newest
 // kill first.
@@ -44,7 +46,7 @@ export async function refreshKilled(machine) {
 }
 
 // Drop one record at once, before space-killed is read again.
-export function forget(machine, space) {
+export function dropKilled(machine, space) {
   write(KEYS.killed, read(KEYS.killed, []).filter((k) => !((k.machine ?? null) === machine && k.space === space)));
   bumpKilled();
 }

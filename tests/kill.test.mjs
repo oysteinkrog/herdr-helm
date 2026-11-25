@@ -71,3 +71,15 @@ test("the killed line says where, when and by whom", () => {
   assert.equal(killedLine({ machine: "home", killed_at: "2026-11-25T19:55:00Z", by: "oystein" }, now), "home · 5m ago by oystein");
   assert.equal(killToast("web", { worktrees_queued: 0, kept: [{ root: "~", why: "main checkout" }] }).body, "Kept: ~ (main checkout). Revive it from the Killed list.");
 });
+
+test("forget runs space-kill forget and drops the entry without a revive", async () => {
+  const calls = [];
+  resetHerdr({ exec: fake({ forget: { forgotten: "sp9" }, "space-killed": [] }, calls) });
+  H.store.set(KEYS.killed, [{ space: "sp9", name: "lab", machine: null, killed_at: "x" }]);
+  const l = new Killed();
+  l.init({}, null);
+  await l.forget({ space: "sp9", name: "lab", machine: null }, { notify() {} });
+  assert.deepEqual(calls[0], { name: "space-kill", args: ["forget", "sp9"], on: null });
+  assert.deepEqual(H.store.get(KEYS.killed), []);
+  assert.equal(l.error, null);
+});

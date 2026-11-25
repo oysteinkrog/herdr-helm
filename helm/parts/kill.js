@@ -3,14 +3,14 @@
 // Kill asks once, then runs space-kill on the space's machine, which closes the space; the
 // engine there refuses what must not be killed (a protected space, a busy agent, a /loop or
 // /goal, a jobd job) and its error is shown here. The Killed list shows every machine's killed
-// spaces, newest first, each with Revive: space-revive makes a new space with the same name in the
+// spaces, newest first, each with Revive and Forget (off the list, not revived): space-revive makes a new space with the same name in the
 // same folder and resumes its Claude sessions. Every step finishes before the overlay closes.
 import { div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { theme, spaces, closeOverlay, notify, shared } from "herdr";
 import { button, dialog } from "../lib/ui.js";
 import { KEYS, read } from "../lib/store.js";
-import { kill, revive, refreshKilled, loadKilled, forget, when } from "../engines/kill.js";
+import { kill, revive, forgetRecord, refreshKilled, loadKilled, dropKilled, when } from "../engines/kill.js";
 import { refresh as refreshFrozen, mark } from "../engines/freeze.js";
 import { folders, key } from "../engines/spaces/folders.js";
 import { localId } from "../lib/names.js";
@@ -114,8 +114,24 @@ export class Killed {
     cx.notify();
     try {
       await revive(k.machine ?? null, k.space);
-      forget(k.machine ?? null, k.space);
+      dropKilled(k.machine ?? null, k.space);
       notify(reviveToast(k.name));
+    } catch (e) {
+      this.error = `${k.name}: ${String(e.message ?? e)}`;
+    }
+    await refreshKilled(k.machine ?? null).catch(() => null);
+    this.reviving = null;
+    cx.notify();
+  }
+
+  // Forget: off the list, not revived. No question: the engine keeps the record under revived/.
+  async forget(k, cx) {
+    this.reviving = `${k.machine ?? ""}/${k.space}`;
+    this.error = null;
+    cx.notify();
+    try {
+      await forgetRecord(k.machine ?? null, k.space);
+      dropKilled(k.machine ?? null, k.space);
     } catch (e) {
       this.error = `${k.name}: ${String(e.message ?? e)}`;
     }
@@ -133,7 +149,8 @@ export class Killed {
         .child(div().truncate().font_medium().text_color(t.foreground).child(k.name ?? k.space))
         .child(div().truncate().text_size(11.5).text_color(t.dim).child(killedLine(k, now))))
       .child(button(t, `revive-${n}`, this.reviving === `${k.machine ?? ""}/${k.space}` ? "Reviving…" : "Revive",
-        (_e, cx) => this.revive(k, cx), { enabled: this.reviving === null }));
+        (_e, cx) => this.revive(k, cx), { enabled: this.reviving === null }))
+      .child(button(t, `forget-${n}`, "Forget", (_e, cx) => this.forget(k, cx), { enabled: this.reviving === null }));
     const body = v_flex().gap(8)
       .when(Boolean(this.error), (el) => el.child(div().text_color(t.ansi1).child(this.error)))
       .child(list.length
