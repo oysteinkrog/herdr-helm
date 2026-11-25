@@ -1,4 +1,4 @@
-// A space's right-click menu (popup, 210 x 290): Freeze space… or Thaw space, Rename, the
+// A space's right-click menu (popup, 210 x 320): Freeze space… or Thaw space, Kill space…, Rename, the
 // worktree items when the space is in a git repo, and Close. Up and down move the selection,
 // Enter picks, Escape closes; the selection follows the pointer.
 //
@@ -51,6 +51,7 @@ export class SpaceMenu {
       this.frozen
         ? { label: "Thaw space", icon: "snowflake", act: () => openOverlay({ mod: "helm", kind: "dialog", width: 420, props: { part: "thaw", space: s.id } }) }
         : { label: "Freeze space…", icon: "snowflake", act: () => openOverlay({ mod: "helm", kind: "dialog", width: 480, props: { part: "freeze", space: s.id } }) },
+      { label: "Kill space…", icon: "power", act: () => openOverlay({ mod: "helm", kind: "dialog", width: 460, props: { part: "kill", space: s.id } }) },
       { label: "Rename", sep: true, act: () => run("space.rename", { id: s.id }) },
       ...(this.git ? [{ label: "New worktree", act: worktree("new") }, { label: "Open worktree", act: worktree("open") }] : []),
       ...(this.git === "linked" ? [{ label: "Remove worktree", act: worktree("remove") }] : []),

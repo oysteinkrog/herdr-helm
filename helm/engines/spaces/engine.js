@@ -1,5 +1,5 @@
 // The spaces engine, run by the host copy: it keeps the machine list, the folder files and the
-// frozen-space mirror up to date, gives new spaces their colour and place, and shows the space
+// frozen-space mirror and the killed-space list up to date, gives new spaces their colour and place, and shows the space
 // above when the front one closes.
 //
 // Intervals, as in the old space-folders mod: machines and folder files every 15 s, frozen
@@ -10,6 +10,7 @@ import { folders, readFile, merge, save, folderOf, key } from "./folders.js";
 import { NewSpaces, spaceLabels } from "./order.js";
 import { liveList, assignColors } from "./live.js";
 import { loadAll } from "../freeze.js";
+import { loadKilled } from "../kill.js";
 import { localId } from "../../lib/names.js";
 
 export class SpacesEngine {
@@ -24,6 +25,11 @@ export class SpacesEngine {
     cx.spawn(async (cx) => {
       try {
         for (;;) { const got = await watchFolder(`${home()}/.local/state/space-freeze`); if (!got?.length) break; this.frozen(cx); }
+      } catch { /* no such folder yet: the 60 s timer covers it */ }
+    });
+    cx.spawn(async (cx) => {
+      try {
+        for (;;) { const got = await watchFolder(`${home()}/.local/state/space-kill`); if (!got?.length) break; this.killed(cx); }
       } catch { /* no such folder yet: the 60 s timer covers it */ }
     });
     cx.timer.every(250, () => this.tick());
@@ -50,6 +56,11 @@ export class SpacesEngine {
 
   frozen(cx) {
     cx.spawn(async () => { await loadAll(read(KEYS.machines, []).map((m) => m.name)).catch(() => null); });
+    this.killed(cx);
+  }
+
+  killed(cx) {
+    cx.spawn(async () => { await loadKilled(read(KEYS.machines, []).map((m) => m.name)).catch(() => null); });
   }
 
   tick() {

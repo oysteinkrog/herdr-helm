@@ -8,19 +8,21 @@ import { KEYS } from "../helm/lib/store.js";
 const H = globalThis.__herdr;
 const space = { id: "sp1", name: "web", machine: null, tabs: [] };
 
-test("the space menu offers Freeze or Thaw first, then Rename, worktree items in git, and Close", () => {
+test("the space menu offers Freeze or Thaw first, then Kill, Rename, worktree items in git, and Close", () => {
   resetHerdr({ spaces: [space] });
   const m = new SpaceMenu();
   m.init({ space: "sp1", frozen: false }, null);
-  assert.deepEqual(m.items().map((i) => i.label), ["Freeze space…", "Rename", "Close"]);
+  assert.deepEqual(m.items().map((i) => i.label), ["Freeze space…", "Kill space…", "Rename", "Close"]);
   m.git = "linked";
-  assert.deepEqual(m.items().map((i) => i.label), ["Freeze space…", "Rename", "New worktree", "Open worktree", "Remove worktree", "Close"]);
+  assert.deepEqual(m.items().map((i) => i.label), ["Freeze space…", "Kill space…", "Rename", "New worktree", "Open worktree", "Remove worktree", "Close"]);
   m.frozen = true;
   m.git = "main";
-  assert.deepEqual(m.items().map((i) => i.label), ["Thaw space", "Rename", "New worktree", "Open worktree", "Close"]);
+  assert.deepEqual(m.items().map((i) => i.label), ["Thaw space", "Kill space…", "Rename", "New worktree", "Open worktree", "Close"]);
   m.pick(0);
   assert.equal(H.overlays.at(-1).props.part, "thaw");
-  m.pick(4);
+  m.pick(1);
+  assert.equal(H.overlays.at(-1).props.part, "kill");
+  m.pick(5);
   assert.deepEqual(H.runs.at(-1), ["space.close", { id: "sp1" }]);
 });
 

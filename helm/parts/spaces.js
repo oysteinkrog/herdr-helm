@@ -1,7 +1,8 @@
 // The spaces sidebar: spaces with coloured avatars and a git tail, grouped in folders and, once
 // another machine is known, by machine. Click to switch, right-click for the space menu, drag a
 // space onto another space, onto a folder, or below the list. Frozen spaces show a snowflake and
-// can be hidden. Under 160 px wide it draws a compact rail.
+// can be hidden; a row under the list opens the killed spaces. Under 160 px wide it draws a
+// compact rail.
 //
 // From herdr-space-folders at 63a78b2 (MIT), itself built on the Herdr app's spaces mod
 // (Apache-2.0); see NOTICE. Changed for helm: the list comes from engines/spaces (data, built
@@ -12,7 +13,7 @@ import { v_flex, h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, machines, theme, run, openOverlay, window, shared, checking } from "herdr";
 import { icon, hoverBg, iconButton, spinner } from "../lib/ui.js";
 import { narrow } from "../lib/layout.js";
-import { FOREIGN, prefs, setPref } from "../lib/store.js";
+import { FOREIGN, KEYS, read, prefs, setPref } from "../lib/store.js";
 import { liveList } from "../engines/spaces/live.js";
 import { folders, folderOf, newSpaceIn, drop, reorder, toggle } from "../engines/spaces/folders.js";
 import { GitTracker, where, tail } from "../engines/spaces/git.js";
@@ -88,7 +89,7 @@ export class Spaces {
   }
 
   menu(w, frozen) {
-    openOverlay({ mod: "helm", kind: "popup", width: 210, height: 290, props: { part: "space-menu", space: w.id, frozen } });
+    openOverlay({ mod: "helm", kind: "popup", width: 210, height: 320, props: { part: "space-menu", space: w.id, frozen } });
   }
 
   newFolder(machine) {
@@ -232,6 +233,7 @@ export class Spaces {
     const { items, hiddenFrozen } = liveList();
     const colors = shared(FOREIGN.spaceColors) ?? {};
     const hiding = Boolean(prefs().hideFrozen);
+    const killed = read(KEYS.killed, []).length;
     this.rowCount = items.length;
     this.follow(items);
     const dragging = this.pressed !== null || Boolean(this.moving);
@@ -260,7 +262,13 @@ export class Spaces {
           .rounded(7).cursor_pointer().text_size(12).text_color(t.dim).hover((s) => s.bg(hoverBg(t, "chrome")).text_color(t.foreground))
           .on_click(() => setPref("hideFrozen", false))
           .child(svg(icon("snowflake")).size(12).flex_none())
-          .when(!rail, (el) => el.child(`${hiddenFrozen} frozen hidden`)))))
+          .when(!rail, (el) => el.child(`${hiddenFrozen} frozen hidden`))))
+        // Killed spaces are gone from Herdr; this row opens their list, where Revive brings one back.
+        .when(killed > 0, (el) => el.child(h_flex().id("killed-open").mt(4).h(24).flex_none().pl(8).gap(7).items_center()
+          .rounded(7).cursor_pointer().text_size(12).text_color(t.dim).hover((s) => s.bg(hoverBg(t, "chrome")).text_color(t.foreground))
+          .on_click(() => openOverlay({ mod: "helm", kind: "dialog", width: 520, props: { part: "killed" } }))
+          .child(svg(icon("power")).size(12).flex_none())
+          .when(!rail, (el) => el.child(`${killed} killed`)))))
         // While dragging: the edge strips, and for a space in a folder the place to drop it out of
         // the folder. They lie over the list, outside the scrolling content, so starting a drag
         // adds no row to the list and its scroll stays where it is.

@@ -10,6 +10,8 @@ export const KEYS = {
   foldersNew: "helm.folders.new",
   freeze: "helm.freeze",
   freezeRev: "helm.freeze.rev",
+  killed: "helm.killed",
+  killedRev: "helm.killed.rev",
   order: "helm.spaces.order",
   changed: "helm.agents.changed",
   prefs: "helm.prefs",

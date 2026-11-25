@@ -9,6 +9,7 @@ import { FolderMenu } from "./folder-menu.js";
 import { FolderEdit } from "./folder-edit.js";
 import { SpaceMenu } from "./space-menu.js";
 import { Freeze, Thaw } from "./freeze.js";
+import { Kill, Killed } from "./kill.js";
 import { Asks } from "./asks.js";
 import { Tabbar } from "./tabbar.js";
 import { Agents, SortMenu } from "./agents.js";
@@ -25,6 +26,8 @@ export const PARTS = {
   "space-menu": SpaceMenu,
   freeze: Freeze,
   thaw: Thaw,
+  kill: Kill,
+  killed: Killed,
   asks: Asks,
   tabbar: Tabbar,
   agents: Agents,
